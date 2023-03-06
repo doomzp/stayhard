@@ -1,10 +1,15 @@
+# A thread (or at least so far [guided by what we know])
+# won't modify the variable for the whole program, so
+# if one thread do "x += 1", 'x' is gonna be modfy
+# just for that thread, not for the other ones.
+# TASK: Learn too much about, we love this SHIT!!!!!!!!!!!!!
 import os
 import sys
 import time
-import multiprocessing
 import tty
 import termios
-import signal
+import subprocess
+import multiprocessing
 
 def checkFile () -> None:
     tofile = os.path.join(os.path.expanduser("~") + "/.configotta")
@@ -26,35 +31,61 @@ def usage () -> None:
 
 class Work:
     def __init__ (self, task: str, mins: str):
-        if not mins.isdigit(): self.__mins = 20
-        else: self.__mins = int(mins)
+        if not mins.isdigit(): self.__total = 1200
+        else: self.__total = int(mins) * 60
+
         self.__task = task
-        self.__seconds = 0
-        self.__secs    = 0
-        self.__mins    = 0
-        self.__hous    = 0
-        self.__countDown()
+        self.__passedby = 0
+        self.__secs     = 0
+        self.__mins     = 0
+        self.__hours    = 0
+        self.__prssdkey = 0
+
+        # Just settings...
+        stts = termios.tcgetattr(sys.stdin)
+        tty.setcbreak(sys.stdin)
+
+        workingT = multiprocessing.Process(target = self.__working)
+        workingT.start()
+
+        workstoped = False
+        while True:
+            if not workingT.is_alive():
+                break
+
+            self.__prssdkey = sys.stdin.read(1)[0]
+            if self.__prssdkey == chr(27):
+                workingT.terminate()
+                print("The program was stoped since ESC key was pressed.")
+                print(f"You did {self.__hours}:{self.__mins}:{self.__secs}!")
+                break
+
+        print("PROGRAM ENDED.")
 
     def __countDown (self) -> None:
-        for sec in range(10, -1, -1):
+        for sec in range(2, -1, -1):
             print(f"Getting started :: {sec} seconds left!", end = '\r')
             time.sleep(1)
         os.system("clear")
 
     def __working (self) -> None:
-        while self.__seconds <= self.__mins * 60:
+        while (self.__passedby <= self.__total):
             if self.__secs == 60:
                 self.__mins += 1
                 self.__secs = 0
-            if mins == 60:
+
+            if self.__mins == 60:
                 self.__mins = 0
                 self.__hours += 1
 
-            print(f"{self.__hous}:{self.__mins}:{self.__secs} \t Working on '{self.__task}' : STAY HARD!", end = '\r')
+            print(f"{self.__hours}:{self.__mins}:{self.__secs} :: Working on '{self.__task}' :: STAY HARD!", end = '\r')
             self.__secs += 1
-            self.__seconds += 1
-            time.sleep(1)
+            self.__passedby += 1
+            time.sleep(000.1)
 
+        print("")
+        print("WELL DONE!")
+        print("PRESS ANY KEY TO SAVE THE PROGRESS INFORMATION.")
 
 def main () -> None:
     checkFile()
