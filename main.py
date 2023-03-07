@@ -1,8 +1,3 @@
-# A thread (or at least so far [guided by what we know])
-# won't modify the variable for the whole program, so
-# if one thread do "x += 1", 'x' is gonna be modfy
-# just for that thread, not for the other ones.
-# TASK: Learn too much about, we love this SHIT!!!!!!!!!!!!!
 import os
 import sys
 import time
@@ -31,33 +26,35 @@ def usage () -> None:
 
 class Work:
     def __init__ (self, task: str, mins: str):
+        # If the -M argument wasn't given or was given
+        # in a wrong way the total of minutes will be
+        # 20, and 20 * 60 = 1200..
         if not mins.isdigit(): self.__total = 1200
-        else: self.__total = int(mins) * 60
+        else:                  self.__total = int(mins) * 60
 
-        self.__task = task
-        self.__passedby = 0
-        self.__secs     = 0
-        self.__mins     = 0
-        self.__hours    = 0
+        # Information about the time, 0: How many seconds
+        # have passed by, 1: hours counter, 2: minutes counter
+        # and seconds counter.
+        self.__info     = multiprocessing.Manager().list([0, 0, 0, 0])
+        self.__twork    = multiprocessing.Process(target = self.__working)
         self.__prssdkey = 0
+        self.__task     = task
+        self.__paused   = False
 
-        # Just settings...
-        stts = termios.tcgetattr(sys.stdin)
-        tty.setcbreak(sys.stdin)
+        # TODO: ...
+        self.__tstts = termios.tcgetattr(sys.stdin)
+        tty.setcbreak(sys.stdin);
 
-        workingT = multiprocessing.Process(target = self.__working)
-        workingT.start()
-
-        workstoped = False
+        self.__twork.start()
         while True:
-            if not workingT.is_alive():
+            if not self.__twork.is_alive():
                 break
 
             self.__prssdkey = sys.stdin.read(1)[0]
             if self.__prssdkey == chr(27):
-                workingT.terminate()
+                self.__twork.terminate()
                 print("The program was stoped since ESC key was pressed.")
-                print(f"You did {self.__hours}:{self.__mins}:{self.__secs}!")
+                print(f"You worked {self.__info[1]}:{self.__info[2]}:{self.__info[3]} at '{self.__task}'. Congrats!")
                 break
 
         print("PROGRAM ENDED.")
@@ -69,23 +66,23 @@ class Work:
         os.system("clear")
 
     def __working (self) -> None:
-        while (self.__passedby <= self.__total):
-            if self.__secs == 60:
-                self.__mins += 1
-                self.__secs = 0
+        while (self.__info[0] <= self.__total):
+            if self.__info[3] == 60:
+                self.__info[2] += 1
+                self.__info[3] = 0
 
-            if self.__mins == 60:
-                self.__mins = 0
-                self.__hours += 1
+            if self.__info[2] == 60:
+                self.__info[2] = 0
+                self.__info[1] += 1
 
-            print(f"{self.__hours}:{self.__mins}:{self.__secs} :: Working on '{self.__task}' :: STAY HARD!", end = '\r')
-            self.__secs += 1
-            self.__passedby += 1
-            time.sleep(000.1)
+            print(f"{self.__info[1]}:{self.__info[2]}:{self.__info[3]} :: Working on '{self.__task}' :: STAY HARD!", end = '\r')
+            self.__info[3] += 1
+            self.__info[0] += 1
+            time.sleep(1)
 
         print("")
         print("WELL DONE!")
-        print("PRESS ANY KEY TO SAVE THE PROGRESS INFORMATION.")
+        print("PRESS ANY KEY TO KILL THE STOPWATCH :).")
 
 def main () -> None:
     checkFile()
