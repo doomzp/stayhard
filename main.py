@@ -4,6 +4,7 @@ import time
 import tty
 import multiprocessing
 import termios
+from datetime import datetime
 
 def checkFile () -> None:
     tofile = os.path.join(os.path.expanduser("~") + "/.configotta")
@@ -43,6 +44,7 @@ class Work:
         self.__info     = multiprocessing.Manager().list([0, 0, 0, 0])
         self.__prssdkey = 0
         self.__task     = task
+        self.__since    = datetime.today().strftime("%H:%M:%S")
 
         self.__stts = termios.tcgetattr(sys.stdin)
         tty.setcbreak(sys.stdin);
@@ -72,11 +74,12 @@ class Work:
         print(f"You've worked {self.__info[1]}:{self.__info[2]}:{self.__info[3]} on '{self.__task}'. Congrats!")
         print("PROGRAM ENDED.")
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.__stts)
+        self.__saveInfo()
 
     def __countDown (self) -> None:
         for sec in range(10, -1, -1):
             print(f"Getting started :: {sec} seconds left!", end = '\r')
-            time.sleep(1)
+            time.sleep(0.01)
         os.system("clear")
 
     def __working (self) -> None:
@@ -95,11 +98,23 @@ class Work:
             print(f"{self.__info[1]}:{self.__info[2]}:{self.__info[3]} :: Working on '{self.__task}' :: STAY HARD!", end = '\r')
             self.__info[3] += 1
             self.__info[0] += 1
-            time.sleep(1)
+            time.sleep(0.01)
 
         print("")
         print("WELL DONE!")
         print("PRESS ANY KEY TO KILL THE STOPWATCH :).")
+
+    def __saveInfo (self):
+        filepath = os.path.join(os.path.expanduser("~") + "/.configotta")
+        file = open(filepath, 'a')
+
+        file.seek(0, 2)
+        file.writelines([
+            '\n' + self.__task + '\n',
+            "Since " + self.__since + " until " + datetime.today().strftime("%H:%M:%S") +  " of " + datetime.today().strftime("%Y-%m-%d") + '\n',
+            str(int(self.__total / 60)) + " mins.\n"
+        ])
+        file.close()
 
 def main () -> None:
     checkFile()
