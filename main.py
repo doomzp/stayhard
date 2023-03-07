@@ -3,6 +3,7 @@ import sys
 import time
 import tty
 import multiprocessing
+import termios
 
 def checkFile () -> None:
     tofile = os.path.join(os.path.expanduser("~") + "/.configotta")
@@ -43,14 +44,14 @@ class Work:
         self.__prssdkey = 0
         self.__task     = task
 
+        self.__stts = termios.tcgetattr(sys.stdin)
+        tty.setcbreak(sys.stdin);
         self.__countDown()
 
         # This variable is an exception since it's shared by both threads.
         self.__paused = multiprocessing.Event()
         self.__twork  = multiprocessing.Process(target = self.__working)
-
         self.__twork.start()
-        tty.setcbreak(sys.stdin);
 
         while self.__twork.is_alive():
             self.__prssdkey = sys.stdin.read(1)[0]
@@ -59,28 +60,29 @@ class Work:
                 print("The program was stoped since ESC key was pressed.")
                 break
 
-            # TODO: Print in a prettier way when the stopwatch is paused.
-            # if self.__prssdkey == chr(32):
-            #     if self.__paused.is_set():
-            #         self.__paused.clear()
-            #     else:
-            #         print("")
-            #         self.__paused.set()
+            if self.__prssdkey == chr(32):
+                if not self.__paused.is_set():
+                    print("")
+                    print("** PAUSED **", end = '\r')
+                    self.__paused.set()
+                else:
+                    self.__countDown()
+                    self.__paused.clear()
 
         print(f"You've worked {self.__info[1]}:{self.__info[2]}:{self.__info[3]} on '{self.__task}'. Congrats!")
         print("PROGRAM ENDED.")
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.__stts)
 
     def __countDown (self) -> None:
         for sec in range(10, -1, -1):
             print(f"Getting started :: {sec} seconds left!", end = '\r')
-            time.sleep(0.5)
+            time.sleep(1)
         os.system("clear")
 
     def __working (self) -> None:
         while (self.__info[0] <= self.__total):
-            # if self.__paused.is_set():
-            #    print("IT'S PAUSED...", end = '\r')
-            #    time.sleep(10)
+            if self.__paused.is_set():
+                continue
 
             if self.__info[3] == 60:
                 self.__info[2] += 1
@@ -93,7 +95,7 @@ class Work:
             print(f"{self.__info[1]}:{self.__info[2]}:{self.__info[3]} :: Working on '{self.__task}' :: STAY HARD!", end = '\r')
             self.__info[3] += 1
             self.__info[0] += 1
-            time.sleep(0.1)
+            time.sleep(1)
 
         print("")
         print("WELL DONE!")
