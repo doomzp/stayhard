@@ -26,23 +26,26 @@ def usage () -> None:
     print('    * -s: Activities summary.')
     exit(0)
 
-class Work:
+class FilePath:
+    path = os.path.join(os.path.expanduser('~') + '/.sthinfo')
+
+class Work ():
     def __init__ (self, task: str, mins: str):
         # If the -M argument wasn't given or was given
-        # in a wrong way the total of minutes will be
-        # 20, and 20 * 60 = 1200.
+        # in a wrong way the total of minutes will be 20 minutes.
         if not mins.isdigit(): self.__total = 1200
         else:                  self.__total = int(mins) * 60
 
         # 'self.__info': Information about the time.
         # idx 0: How many seconds have passed by.
-        # idx 1: minutes counter
-        # idx 2: seconds counter.
+        # idx 1: hours counter.
+        # idx 2: minutes counter
+        # idx 3: seconds counter.
         # This gotta be like this since parent and child threads
         # doesn't share same memory location, so if one value
         # changes in the parent thread, it'll not be affected on
         # child one.
-        self.__info     = multiprocessing.Manager().list([0, 0, 0])
+        self.__info     = multiprocessing.Manager().list([0, 0, 0, 0])
         self.__prssdkey = 0
         self.__task     = task
 
@@ -72,7 +75,7 @@ class Work:
                     self.__countDown()
                     self.__paused.clear()
 
-        print(f"You've worked {self.__info[1]}:{self.__info[2]} on '{self.__task}'. Congrats!")
+        print(f"You've worked {self.__info[1]}:{self.__info[2]}:{self.__info[3]} on '{self.__task}'. Congrats!")
         print('PROGRAM ENDED.')
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.__stts)
         self.__saveInfo()
@@ -88,58 +91,67 @@ class Work:
             if self.__paused.is_set():
                 continue
 
-            if self.__info[2] == 60:
-                self.__info[1] += 1
-                self.__info[2] = 0
-
-            print(f"{self.__info[1]}:{self.__info[2]} :: Working on '{self.__task}' :: STAY HARD!", end = '\r')
-            time.sleep(0.1)
+            print(f"{self.__info[1]}:{self.__info[2]}:{self.__info[3]} :: Working on '{self.__task}' :: STAY HARD!", end = '\r')
+            time.sleep(0.001)
             self.__info[0] += 1
-            self.__info[2] += 1
+            self.__info[3] += 1
+
+            if self.__info[3] == 60:
+                self.__info[2] += 1
+                self.__info[3] = 0
+
+            if self.__info[2] == 60:
+                self.__info[2] = 0
+                self.__info[1] += 1
 
         print('')
         print('WELL DONE!')
         print('PRESS ANY KEY TO KILL THE STOPWATCH :).')
 
     def __saveInfo (self):
-        filepath  = os.path.join(os.path.expanduser('~') + '/.sthinfo')
-        file      = open(filepath, 'r')
-        tasksinfo = file.readlines()
-        isnewtask = True
-        datetoday = datetime.today().strftime('%Y-%m-%d')
+        file    = open(FilePath.path, 'r')
+        conts   = file.readlines()
+        today   = datetime.today().strftime('%Y-%m-%d')
+        hoursd  = self.__info[1]
+        minsd   = self.__info[2]
+        secsd   = self.__info[3]
+        newtask = True
 
-        minsdone  = int(self.__info[0]) // 60
-        secsdone  = int(self.__info[0]) % 60
-        for idxT in range(len(tasksinfo)):
-            listinfo = tasksinfo[idxT].split(',')
-            if self.__task == listinfo[0]:
-                newmins  = int(listinfo[-2]) + minsdone
-                newsecs  = int(listinfo[-1]) + secsdone
+        for i in range(len(conts)):
+            info = conts[i].split(',')
+            if info[0] == self.__task:
+                hoursd += int(info[-3])
+                minsd  += int(info[-2])
+                secsd  += int(info[-1])
 
-                if newsecs >= 60:
-                    newsecs = 0
-                    newmins += 1
-                tasksinfo[idxT] = f'{self.__task}, {datetoday}, {newmins}, {newsecs}\n'
-                isnewtask = False
+                if secsd > 60:
+                    minsd += 1
+                    secsd -= 60
+                if minsd > 60:
+                    hoursd += 1
+                    minsd -= 60
+                conts[i] = f'{self.__task}, {today}, {hoursd}, {minsd}, {secsd}\n'
+                newtask = False
                 break
 
-        if isnewtask:
-            tasksinfo.append(f'{self.__task}, {datetoday}, {minsdone}, {secsdone}\n')
-            tasksinfo.sort()
+        if newtask:
+            conts.append(f'{self.__task}, {today}, {hoursd}, {minsd}, {secsd}\n')
 
         file.close()
-        file = open(filepath, 'w')
-        file.writelines(tasksinfo)
+        file = open(FilePath.path, 'w')
+        file.writelines(conts)
         file.close()
 
 class Summary:
     def __init__(self):
-        self.__pathfile   = os.path.join(os.path.expanduser('~') + '/.sthinfo')
-        self.__fileinfo   = open(self.__pathfile, 'r')
-        self.__table      = [['Task', 'Last day accessed', 'Minutes', 'Seconds']]
+        self.__pathfile = os.path.join(os.path.expanduser('~') + '/.sthinfo')
+        self.__fileinfo = open(self.__pathfile, 'r')
+        self.__table    = [['Task', 'Last day accessed', 'Hours', 'Minutes', 'Seconds']]
 
         for task in self.__fileinfo.readlines():
             self.__table.append(task.split(','))
+            print(task.split(','))
+
         print(tabulate(
             self.__table,
             tablefmt = 'simple_grid'
