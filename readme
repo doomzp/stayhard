@@ -1,0 +1,26 @@
+stayhard:
+    This is a simple script to count how many time you spend with your tasks
+    or activites, the program is able to pause the stopwatch and to exit before
+    the time reaches to the end.
+
+    Arguments:
+    * -T: Task you'll be working on.
+    * -M: How many minutes you'll work.
+    * -s: Summary of activities.
+
+    If you use '-s' argument, the program will just print the summary, not
+    start a new stopwatch even if you use the other arguments.
+    To pause the stopwatch press SPACE key and same to resume it, if you wanna
+    quit the program press ESC key, no worries, the time you studied is gonna
+    be saved ;). THIS SCRIPT WAS CODED TO BE EXECUTED ON A GNU-LINUX MACHINE.
+
+    Python dependencies:
+    * tabulate: Print formating.
+    * temios & tty: Set cbreak terminal mode.
+    Those libreries are necessary to execute the program.
+
+    Dedication:
+    This is a special special dedication to Miguel, Diego and Jofre, thanks
+    for all your advices and STAY HARD <3.
+
+Juan Diego Patiño Muñoz - Mar.09.2023.

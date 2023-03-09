@@ -8,24 +8,6 @@ from datetime import datetime
 import subprocess
 from tabulate import tabulate
 
-def checkFile () -> None:
-    tofile = os.path.join(os.path.expanduser('~') + '/.sthinfo')
-    if os.path.isfile(tofile):
-        return
-
-    print("The program will create a file called '.sthinfo' at '~/'.")
-    print('Do not remove since all your progress information will be losed.')
-    with open(tofile, 'w') as file:
-        file.close()
-    print(tofile + ': Was created!')
-
-def usage () -> None:
-    print('U: This program needs arguments to be able to work!')
-    print("    * -T <task>: Task you'll be working on.")
-    print("    * -M <mins>: How many mintues you'll be working on.")
-    print('    * -s: Activities summary.')
-    exit(0)
-
 class FilePath:
     path = os.path.join(os.path.expanduser('~') + '/.sthinfo')
 
@@ -92,7 +74,7 @@ class Work ():
                 continue
 
             print(f"{self.__info[1]}:{self.__info[2]}:{self.__info[3]} :: Working on '{self.__task}' :: STAY HARD!", end = '\r')
-            time.sleep(0.001)
+            time.sleep(1)
             self.__info[0] += 1
             self.__info[3] += 1
 
@@ -150,7 +132,6 @@ class Summary:
 
         for task in self.__fileinfo.readlines():
             self.__table.append(task.split(','))
-            print(task.split(','))
 
         print(tabulate(
             self.__table,
@@ -158,12 +139,29 @@ class Summary:
         ))
         self.__fileinfo.close()
 
+def checkFile () -> None:
+    if os.path.isfile(FilePath.path):
+        return
+
+    print("The program will create a file called '.sthinfo' at '~/'.")
+    print('Do not remove since all your progress information will be losed.')
+    with open(FilePath.path, 'w') as file:
+        file.close()
+    print(tofile + ': Was created!')
+
+def usage () -> None:
+    print('U: This program needs arguments to be able to work!')
+    print("    * -T <task>: Task you'll be working on.")
+    print("    * -M <mins>: How many mintues you'll be working on.")
+    print('    * -s: Activities summary.')
+    exit(0)
+
 def main () -> None:
     checkFile()
     if len(sys.argv) == 1:
         usage()
 
-    args = ['unkown', '-/-', False]
+    args = ['unknown', '-/-', False]
     for idx in range(len(sys.argv)):
         if sys.argv[idx] == '-s':
             Summary()
