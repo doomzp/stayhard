@@ -147,7 +147,7 @@ def checkFile () -> None:
     print('Do not remove since all your progress information will be losed.')
     with open(FilePath.path, 'w') as file:
         file.close()
-    print(tofile + ': Was created!')
+    print(FilePath.path + ': Was created!')
 
 def usage () -> None:
     print('U: This program needs arguments to be able to work!')

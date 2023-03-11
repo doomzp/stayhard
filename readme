@@ -16,8 +16,7 @@ stayhard:
 
     Python dependencies:
     * tabulate: Print formating.
-    * temios & tty: Set cbreak terminal mode.
-    Those libreries are necessary to execute the program.
+    You can install it using writing '$ pip install tabulate' in your terminal :).
 
     Dedication:
     This is a special special dedication to Miguel, Diego and Jofre, thanks
