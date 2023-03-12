@@ -55,7 +55,6 @@ class Work ():
                     print('** PAUSED **', end = '\r')
                     self.__paused.set()
                 else:
-                    self.__countDown()
                     self.__paused.clear()
 
         print(f"You've worked {self.__info[1]}:{self.__info[2]}:{self.__info[3]} on '{self.__task}'. Congrats!")
@@ -72,6 +71,7 @@ class Work ():
     def __working (self) -> None:
         while (self.__info[0] != self.__total):
             if self.__paused.is_set():
+                time.sleep(3)
                 continue
 
             print(f"{self.__info[1]}:{self.__info[2]}:{self.__info[3]} :: Working on '{self.__task}' :: STAY HARD!", end = '\r')
